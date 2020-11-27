@@ -1,0 +1,280 @@
+package centralizator;
+
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JFrame;
+import javax.swing.JTextArea;
+
+public class GuiCentralizator {
+	public JTextArea textArea;
+	
+	public GuiCentralizator(){
+		initCentralizator();
+	}
+
+	private void initCentralizator() {
+		// TODO Auto-generated method stub
+		textArea = new JTextArea(" Press F10 or F9 to see the tests");
+		textArea.addKeyListener(new MKeyListener());
+		
+		JFrame jframe = new JFrame();
+		jframe.add(textArea);
+		jframe.setLocationRelativeTo(null);
+		jframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		jframe.setSize(400, 350);
+		jframe.setVisible(true);
+		textArea.requestFocusInWindow();
+		 
+	}
+	
+	class MKeyListener extends KeyAdapter {
+		int index = 0;
+		
+		@Override
+		public void keyPressed(KeyEvent event) {
+			char ch = event.getKeyChar();
+
+			if (ch == 'a' || ch == 'b' || ch == 'c') {
+
+				System.out.println(event.getKeyChar());
+
+			}
+			if (event.getKeyCode() == KeyEvent.VK_F10) {
+				ProjectCentralizatorXML.index++;
+			}
+			if ((ProjectCentralizatorXML.index != 0) && (event.getKeyCode() == KeyEvent.VK_F9)) {
+				ProjectCentralizatorXML.index--;
+			}
+
+			System.out.println("Key codes: " + event.getKeyCode());
+			textArea.setText(ProjectCentralizatorXML.displayMenu(Globals.menu, ProjectCentralizatorXML.index));
+			textArea.requestFocusInWindow();
+		
+		}
+
+
+	}
+
+}
+
+
+
+ANOTHER CLASS
+
+
+package centralizator;
+
+import java.io.File;
+import java.io.IOException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+public class ProjectCentralizatorXML {
+	public static int index = 0;
+
+	private String param1;
+	private static String rootNode;
+	NodeList root = null;
+
+	public ProjectCentralizatorXML(String param, String rootNode)
+			throws SAXException, IOException {
+
+		this.param1 = param;
+		this.rootNode = rootNode;
+		Document doc = null;
+
+		File file = new File(param1);
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		DocumentBuilder db;
+		try {
+			db = dbf.newDocumentBuilder();
+			doc = db.parse(file);
+			doc.getDocumentElement().normalize();
+			root = doc.getElementsByTagName(this.rootNode);
+
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public String getArgumentValue(Node valNode, String atrNode) {
+		String result = "";
+		return result;
+	}
+
+	public void setApplicationGlobals() {
+		for (int i = 0; i < root.getLength(); i++) {
+			Node node = root.item(i);
+			Element ee = (Element) node;
+
+			Attr name = ee.getAttributeNode("name");
+			Attr value = ee.getAttributeNode("value");
+
+			if (name.getValue().equals("path")) {
+				Globals.initFilePath = value.getValue();
+			}
+			if (name.getValue().equals("xmlProjectInitFileName")) {
+				Globals.xmlProjectInitFileName = value.getValue();
+			}
+			if (name.getValue().equals("entriesPerPage")) {
+				Globals.entriesPerPage = value.getValue();
+			}
+			if (name.getValue().equals("entryMaxLength")) {
+				Globals.entryMaxLength = value.getValue();
+			}
+
+		}
+	}
+
+	public void setMenuItems() {
+
+		resize(Globals.menu, Globals.menu.length + 1, root.getLength());
+		String[] menuItems = new String[root.getLength()];
+
+		for (int i = 0; i < root.getLength(); i++) {
+
+			Node node = root.item(i);
+			Element ee = (Element) node;
+
+			Attr name = ee.getAttributeNode("name");
+			Attr value = ee.getAttributeNode("value");
+
+			switch (name.getValue()) {
+			case "idx":
+				menuItems[i] = value.getValue();
+				break;
+			case "title":
+				menuItems[i] = value.getValue();
+				break;
+
+			case "description_file":
+				menuItems[i] = value.getValue();
+				break;
+
+			case "description":
+				menuItems[i] = value.getValue();
+				break;
+			}
+
+		}
+		Globals.menu[Globals.menu.length - 1] = menuItems;
+	}
+
+	private void resize(String[][] menu, int i, int length) {
+		String[][] tempMenu = Globals.menu;
+		Globals.menu = new String[Globals.menu.length + 1][root.getLength()];
+
+		for (int tempI = 0; tempI < tempMenu.length; tempI++) {
+			Globals.menu[tempI] = tempMenu[tempI];
+		}
+	}
+
+	public static void readFolders(String folderPath) throws SAXException,
+			IOException {
+		File dir = new File(folderPath);
+		String[] children = dir.list();
+
+		if (children != null) {
+			for (int i = 0; i < children.length; i++) {
+				String filename = children[i];
+				File subfolder = new File(folderPath + "\\" + filename);
+				String[] children1 = subfolder.list();
+				for (String child : children1) {
+					if (child.equals(Globals.xmlProjectInitFileName)) {
+						String initXmlFile = folderPath + "\\" + filename
+								+ "\\" + child;
+						ProjectCentralizatorXML initXml = new ProjectCentralizatorXML(
+								initXmlFile, "setParameter");
+						initXml.setMenuItems();
+					}
+				}
+
+			}
+		}
+
+	}
+	
+	public static String displayMenu(String[][] menu, int menuIndex) {
+		String result = "MENU\n--------------------\n";
+		for (int j = 0; j < menu[menuIndex].length; j++) {
+			result += j + 1 + ". " + menu[menuIndex][j] + "\n";
+		}
+		return result;
+	}
+
+}
+
+
+
+ANOTHER CLASS
+
+package centralizator;
+
+import java.io.File;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
+
+public class RunCentralizator {
+	
+	public static void main(String[] args) throws SAXException, IOException {
+		ProjectCentralizatorXML paramsXml = null;
+		try {
+			// aici am scris path-ul in care se afla xml-ul principal
+			paramsXml = new ProjectCentralizatorXML(
+					"C:\\Eclipse\\SandBox\\Centralizator_Exercitii\\Centralizator\\CentralizatorExercitii\\src\\params.xml",
+					"setParameter");
+		} catch (SAXException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+
+		}
+
+		paramsXml.setApplicationGlobals();
+		paramsXml.readFolders(Globals.initFilePath);
+		paramsXml.displayMenu(Globals.menu, paramsXml.index);
+		
+		GuiCentralizator gui = new GuiCentralizator();
+	}
+	
+	
+	
+
+	
+
+}
+
+And ANOTHER CLASS
+
+package centralizator;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JButton;
+
+
+public final class Globals {
+	public static String initFilePath;
+	public static String xmlProjectInitFileName;
+	public static String entriesPerPage;
+	public static String entryMaxLength;
+	public static String title;
+	public static String description_file;
+	public static String description;
+	public static String[][] menu = new String[0][0];
+	public int  index;
+	
+}
+
+
